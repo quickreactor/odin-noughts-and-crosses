@@ -1,0 +1,51 @@
+* {
+    box-sizing: border-box;
+}
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 9rem;
+    height: 16rem;  /* Fixed height instead of aspect-ratio */
+    width: 16rem;   /* Fixed width to match height */
+    font-family: Fredoka;
+    line-height: 1;
+}
+.cell[data-column-number="1"] {
+    border-left: 10px solid black;
+    border-right: 10px solid black;
+}
+
+.cell[data-row-number="1"] {
+    border-top: 10px solid black;
+    border-bottom: 10px solid black;
+
+}
+
+.winner {
+    color: red;
+}
+
+.cell.active:hover {
+
+    background-color: lightblue; /* Style on hover */
+}
+
+#grid {
+    display: grid;
+    width: fit-content;  /* Changed from 50rem to fit-content */
+    grid-template-columns: repeat(3, 16rem); /* Fixed width columns */
+    gap: 0;  /* Ensure no gaps between cells */
+}
+
+#container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#play-again {
+    display: none;
+}

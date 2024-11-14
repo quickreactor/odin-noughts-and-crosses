@@ -10,7 +10,7 @@ const Gameboard = (function () {
             for (let j = 0; j < columns; j++) {
                 board[i].push(Cell());
             }
-    
+
         }
     }
 
@@ -31,21 +31,28 @@ const Gameboard = (function () {
 })();
 
 function Cell() {
-    let value = "[ ]";
+    let value = "";
+    let winner = false;
 
     const markCell = (player) => {
-        value = ` ${player.symbol} `;
+        value = player.symbol;
     };
 
+    const setWinner = () => {
+        winner = true;
+    };
+
+    const isWinner = () => winner;
     const getValue = () => value;
 
-    return { markCell, getValue };
+    return { markCell, getValue, setWinner, isWinner };
 
 }
 
 function GameController(p1Name, p2Name) {
     console.log("first")
     const board = Gameboard;
+
     const players = [
         {
             name: p1Name,
@@ -71,27 +78,58 @@ function GameController(p1Name, p2Name) {
 
     const checkForWinner = () => {
         let boardArr = board.getBoard();
-        
-        let winningRows = boardArr.filter(row => {
-            return row.every(cell => {
-                return cell.getValue().trim() === "X" || cell.getValue().trim() === "O"
-            })
+
+
+        let winningRows = boardArr.filter((row, rowNum) => {
+            if (
+                row.every(cell => {
+                    return cell.getValue().trim() === "X"
+                }) ||
+                row.every(cell => {
+                    return cell.getValue().trim() === "O"
+                })
+            ) {
+                row.forEach(cell => {
+                    cell.setWinner();
+                })
+                return true
+            }
         });
-        
+
         let columns = boardArr[0].map((e, columnIndex) => boardArr.map(row => row[columnIndex]));
-        
-        let winningCols = columns.filter(col => {
-            return col.every(cell => {
-                return cell.getValue().trim() === "X" || cell.getValue().trim() === "O"
-            })
+
+        let winningCols = columns.filter((col, colNum) => {
+            if (
+                col.every(cell => {
+                    return cell.getValue().trim() === "X"
+                }) ||
+                col.every(cell => {
+                    return cell.getValue().trim() === "O"
+                })
+            ) {
+                col.forEach(cell => {
+                    cell.setWinner();
+                })
+                return true
+            }
         });
 
-        let diags = [[boardArr[0][0], boardArr[1][1], boardArr[2][2]],[boardArr[0][2], boardArr[1][1], boardArr[2][0]]]
+        let diags = [[boardArr[0][0], boardArr[1][1], boardArr[2][2]], [boardArr[0][2], boardArr[1][1], boardArr[2][0]]]
 
-        let winningDiags = diags.filter(diag => {
-            return diag.every(cell => {
-                return cell.getValue().trim() === "X" || cell.getValue().trim() === "O"
-            })
+        let winningDiags = diags.filter((diag, diagNum) => {
+            if (
+                diag.every(cell => {
+                    return cell.getValue().trim() === "X"
+                }) ||
+                diag.every(cell => {
+                    return cell.getValue().trim() === "O"
+                })
+            ) {
+                diag.forEach(cell => {
+                    cell.setWinner();
+                })
+                return true
+            }
         });
 
         if (winningRows.length > 0 || winningCols.length > 0 || winningDiags.length > 0) {
@@ -102,9 +140,17 @@ function GameController(p1Name, p2Name) {
         }
     }
 
+    const checkForDraw = () => {
+        let boardArr = board.getBoard();
+        return boardArr.every(row => row.every(cell => cell.getValue() !== ""));
+    }
+
 
     const playRound = (column, row) => {
-        if (board.getBoard()[row - 1][column - 1].getValue() !== "[ ]") {
+        let gameOver = false;
+        let draw = false;
+
+        if (board.getBoard()[row][column].getValue() !== "") {
             console.log("That square is already taken, try again!");
             printNewRound();
             return
@@ -113,16 +159,22 @@ function GameController(p1Name, p2Name) {
         console.log(
             `${getActivePlayer().name} took ${column}, ${row}...`
         );
-        board.takeCell(column - 1, row - 1, getActivePlayer());
+        board.takeCell(column, row, getActivePlayer());
 
         /*  This is where we would check for a winner and handle that logic,
             such as a win message. */
         if (checkForWinner()) {
-            board.clearBoard();
-        };
-        // Switch player turn
-        switchPlayerTurn();
-        printNewRound();
+            gameOver = true;
+            // board.clearBoard();
+        } else if (checkForDraw()) {
+            gameOver = true;
+            draw = true;
+        } else {
+            // Switch player turn
+            switchPlayerTurn();
+            printNewRound();
+        }
+        return {gameOver, draw};
     }
 
     // Initial play game message
@@ -132,4 +184,77 @@ function GameController(p1Name, p2Name) {
 }
 
 let game = GameController("Jim", "Alf");
+
+(function ScreenController() {
+    // needs to make the grid and fill it with the current values
+    // add click listener and handler
+    let turnDiv = document.querySelector("#turn");
+    let gridDiv = document.querySelector("#grid");
+    let playAgainButton = document.querySelector('#play-again');
+
+    const updateScreen = (gameOver) => {
+
+        // update grid
+        gridDiv.innerHTML = "";
+        Gameboard.getBoard().forEach((row, rowNum) => {
+            row.forEach((cell, columnNum) => {
+                let cellDiv = document.createElement('div');
+                cellDiv.classList.add('cell');
+                if (!gameOver) {
+
+                    cellDiv.classList.add('active');
+                }
+                cellDiv.dataset.columnNumber = columnNum;
+                cellDiv.dataset.rowNumber = rowNum;
+                cellDiv.innerText = cell.getValue();
+                if (cell.isWinner()) {
+                    cellDiv.classList.add('winner');
+                }
+
+                gridDiv.appendChild(cellDiv);
+            });
+        });
+
+        // update turn
+        turnDiv.innerText = `${game.getActivePlayer().name}'s turn. (${game.getActivePlayer().symbol})`;
+
+        // update play again
+        if (gameOver) playAgainButton.style.display = 'block';
+    }
+
+    const gameOverFunction = (isDraw) => {
+        gridDiv.removeEventListener('click', gridClickHandler);
+        updateScreen(true);
+        if (isDraw) { // draw
+            turnDiv.innerText = `Awww it's a draw! Nobody wins!`
+        } else {
+            turnDiv.innerText = `${game.getActivePlayer().name} wins!`
+        }
+    }
+    const gridClickHandler = (e) => {
+        let row = e.target.dataset.rowNumber;
+        let column = e.target.dataset.columnNumber;
+        let gameStatus = game.playRound(column, row);
+        
+        if (gameStatus.gameOver) { // gameover
+            gameOverFunction(gameStatus.draw);
+        } else {
+            updateScreen();
+        }
+    }
+
+    gridDiv.addEventListener('click', gridClickHandler);
+
+    const playAgainClickHandler = (e) => {
+        Gameboard.clearBoard();
+        updateScreen();
+        gridDiv.addEventListener('click', gridClickHandler);
+        playAgainButton.style.display = 'none';
+    }
+
+    playAgainButton.addEventListener('click', playAgainClickHandler);
+
+    updateScreen();
+})()
+
 
