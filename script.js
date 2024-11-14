@@ -64,6 +64,10 @@ function GameController(p1Name, p2Name) {
         }
     ];
 
+    const changePlayerName = (i, name) => {
+        players[i].name = name;
+    }
+
     let activePlayer = players[0];
     const switchPlayerTurn = () => {
         activePlayer === players[0] ? activePlayer = players[1] : activePlayer = players[0];
@@ -180,7 +184,7 @@ function GameController(p1Name, p2Name) {
     // Initial play game message
     printNewRound();
 
-    return { playRound, getActivePlayer };
+    return { playRound, getActivePlayer, changePlayerName };
 }
 
 let game = GameController("Jim", "Alf");
@@ -191,6 +195,10 @@ let game = GameController("Jim", "Alf");
     let turnDiv = document.querySelector("#turn");
     let gridDiv = document.querySelector("#grid");
     let playAgainButton = document.querySelector('#play-again');
+    let player1Input = document.querySelector("#player1-name");
+    let player2Input = document.querySelector("#player2-name");
+    let player1Button = document.querySelector("#player1-name-button");
+    let player2Button = document.querySelector("#player2-name-button");
 
     const updateScreen = (gameOver) => {
 
@@ -253,6 +261,28 @@ let game = GameController("Jim", "Alf");
     }
 
     playAgainButton.addEventListener('click', playAgainClickHandler);
+
+    function changePlayerName(playerId) {
+        const input = document.getElementById("player" + playerId + '-name');
+
+        if (input.value.trim() !== '') {
+            game.changePlayerName(parseInt(playerId) - 1, input.value.trim());
+            updateScreen();
+        } else {
+            alert('Please enter a name');
+        }
+
+        input.value = ''; // Clear the input field after updating the name
+    }
+
+    // Event listeners for the buttons
+    player1Button.addEventListener('click', function() {
+        changePlayerName('1');
+    });
+
+    player2Button.addEventListener('click', function() {
+        changePlayerName('2');
+    });
 
     updateScreen();
 })()

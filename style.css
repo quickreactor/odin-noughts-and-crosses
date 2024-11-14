@@ -49,3 +49,8 @@
 #play-again {
     display: none;
 }
+
+.player-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
